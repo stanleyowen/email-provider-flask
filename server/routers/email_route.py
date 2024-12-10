@@ -3,6 +3,7 @@ import email
 import smtplib
 import chardet
 
+from email.header import decode_header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from flask import Blueprint, request, jsonify
@@ -10,7 +11,6 @@ from flask import Blueprint, request, jsonify
 email_route = Blueprint('email_route', __name__)
 
 
-# Example route to read emails
 @email_route.route('/', methods=['POST'])
 def read_email():
     # Get the email credentials from the request body
@@ -39,16 +39,32 @@ def read_email():
         for response_part in msg_data:
             if isinstance(response_part, tuple):
                 msg = email.message_from_bytes(response_part[1])
+
+                # Decode the subject
+                subject, encoding = decode_header(msg["subject"])[0]
+                if isinstance(subject, bytes):
+                    subject = subject.decode(encoding or 'utf-8')
+
+                # Decode the from field
+                from_ = msg["from"]
+                from_parts = decode_header(from_)
+                from_decoded = ""
+                for part, enc in from_parts:
+                    if isinstance(part, bytes):
+                        from_decoded += part.decode(enc or 'utf-8')
+                    else:
+                        from_decoded += part
+
                 email_dict = {
                     "seqno": int(email_id.decode()),
-                    "from": msg["from"],
+                    "from": from_decoded,
                     "to": msg["to"],
-                    "subject": msg["subject"],
+                    "subject": subject,
                     "date": msg["date"],
                     "body": ""
                 }
+
                 for part in msg.walk():
-                    print(part.get_content_type())
                     if part.get_content_type() == "text/html":
                         payload = part.get_payload(decode=True)
                         if payload:
@@ -57,6 +73,7 @@ def read_email():
                             email_dict["body"] = payload.decode(
                                 encoding, errors='replace')
                             break  # Prioritize HTML content
+
                     elif part.get_content_type() == "text/plain" and not email_dict["body"]:
                         payload = part.get_payload(decode=True)
                         if payload:
@@ -64,6 +81,7 @@ def read_email():
                                 payload)['encoding'] or 'utf-8'
                             email_dict["body"] = payload.decode(
                                 encoding, errors='replace')
+
                 email_data.append(email_dict)
 
     return jsonify(email_data)
