@@ -3,6 +3,8 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 
+from email_route import email_route  # Import the email_route blueprint
+
 # Load the environment variables if the app is not in production
 if os.getenv('FLASK_ENV') != 'production':
     load_dotenv()
@@ -19,6 +21,10 @@ CORS(app, origins=os.getenv('CORS_ORIGIN').split(','))
 def set_json_response_header(response):
     response.headers['Content-Type'] = 'application/json'
     return response
+
+
+# Register the email_route blueprint
+app.register_blueprint(email_route, url_prefix='/mail')
 
 
 # Example route to demonstrate CORS and JSON response
