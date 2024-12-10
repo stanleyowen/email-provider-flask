@@ -1,6 +1,8 @@
 import imaplib
 import email
 import smtplib
+import chardet
+
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from flask import Blueprint, request, jsonify
@@ -17,11 +19,14 @@ def read_email():
     password = data.get('password')
     imap_server = data.get('incomingMailServer')
 
-    print(username, password, imap_server)
+    # Connect to the server
+    mail = imaplib.IMAP4_SSL(imap_server)
 
-    mail = imaplib.IMAP4_SSL(imap_server)  # Connect to the server
-    mail.login(username, password)  # Login to your account
-    mail.select("inbox")  # Select the inbox folder
+    # Login to your account
+    mail.login(username, password)
+
+    # Select the mailbox you want to read (in this case, the inbox)
+    mail.select("inbox")
 
     # Search for all emails in the inbox
     status, messages = mail.search(None, 'ALL')
@@ -43,15 +48,22 @@ def read_email():
                     "body": ""
                 }
                 for part in msg.walk():
+                    print(part.get_content_type())
                     if part.get_content_type() == "text/html":
                         payload = part.get_payload(decode=True)
                         if payload:
-                            email_dict["body"] = payload.decode()
+                            encoding = chardet.detect(
+                                payload)['encoding'] or 'utf-8'
+                            email_dict["body"] = payload.decode(
+                                encoding, errors='replace')
                             break  # Prioritize HTML content
                     elif part.get_content_type() == "text/plain" and not email_dict["body"]:
                         payload = part.get_payload(decode=True)
                         if payload:
-                            email_dict["body"] = payload.decode()
+                            encoding = chardet.detect(
+                                payload)['encoding'] or 'utf-8'
+                            email_dict["body"] = payload.decode(
+                                encoding, errors='replace')
                 email_data.append(email_dict)
 
     return jsonify(email_data)
