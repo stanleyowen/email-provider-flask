@@ -3,7 +3,9 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 
-from email_route import email_route  # Import the email_route blueprint
+# Import the router blueprints
+from routers.auth_route import auth_route
+from routers.email_route import email_route
 
 # Load the environment variables if the app is not in production
 if os.getenv('FLASK_ENV') != 'production':
@@ -23,7 +25,8 @@ def set_json_response_header(response):
     return response
 
 
-# Register the email_route blueprint
+# Register the router blueprints
+app.register_blueprint(auth_route, url_prefix='/auth')
 app.register_blueprint(email_route, url_prefix='/mail')
 
 
