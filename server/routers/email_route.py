@@ -36,6 +36,10 @@ def read_email():
     status, messages = mail.search(None, 'ALL')
     email_ids = messages[0].split()
 
+    # Check if the starting ID is within the range of available email IDs
+    if start_id < 1 or start_id > len(email_ids):
+        return jsonify({"status": "error", "message": "Starting ID out of range"}), 404
+
     # Calculate the range of email IDs to fetch
     start_index = max(0, start_id - 1)
     end_index = min(start_index + num_messages, len(email_ids))

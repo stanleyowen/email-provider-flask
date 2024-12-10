@@ -84,7 +84,7 @@ const Auth = ({ auth, handleCredential }: AuthInterface) => {
     // Make the POST request to the server
     else {
       await axios
-        .post(`${process.env.REACT_APP_API_URL}/mail/`, data)
+        .post(`${process.env.REACT_APP_API_URL}/auth/login`, data)
         .then((res) => {
           // Set the data to the local storage
           localStorage.setItem("credentials", JSON.stringify(data));
@@ -92,7 +92,7 @@ const Auth = ({ auth, handleCredential }: AuthInterface) => {
           handleCredential({
             isLoading: false,
             loggedIn: true,
-            emails: res.data,
+            emails: [],
           });
         })
         .catch((err) => {
