@@ -22,7 +22,6 @@ const App = ({
 }: any) => {
   const HOST_DOMAIN: string =
     process.env.REACT_APP_HOST_DOMAIN ?? window.location.origin;
-  const [isOffline, setConnectionState] = useState<boolean>(false);
   const [transition, setTransition] = useState<
     React.ComponentType<TransitionProps> | undefined
   >(undefined);
@@ -51,12 +50,6 @@ const App = ({
           handleCredential={handleCredential}
           refreshInbox={refreshInbox}
         />
-
-        <Snackbar open={isOffline} TransitionComponent={transition}>
-          <Alert severity="error">
-            You are offline. Some functionality may be unavailable.
-          </Alert>
-        </Snackbar>
       </div>
     </div>
   );

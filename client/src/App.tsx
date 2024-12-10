@@ -45,7 +45,7 @@ export default function App() {
   );
 
   // Recursive function to fetch messages
-  const fetchMessages = async (startId = 0) => {
+  const fetchMessages = async (startId = 1) => {
     const data = localStorage.getItem("credentials");
     if (data) {
       const parsedData = JSON.parse(data);

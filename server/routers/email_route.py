@@ -19,6 +19,10 @@ def read_email():
     password = data.get('password')
     imap_server = data.get('incomingMailServer')
 
+    # Get query parameters for starting ID and number of messages
+    start_id = int(data.get('startId', 1))
+    num_messages = int(data.get('numMessages', 50))
+
     # Connect to the server
     mail = imaplib.IMAP4_SSL(imap_server)
 
@@ -32,9 +36,15 @@ def read_email():
     status, messages = mail.search(None, 'ALL')
     email_ids = messages[0].split()
 
+    # Calculate the range of email IDs to fetch
+    start_index = max(0, start_id - 1)
+    end_index = min(start_index + num_messages, len(email_ids))
+    email_ids_to_fetch = email_ids[start_index:end_index]
+
     email_data = []
 
-    for email_id in email_ids:
+    for email_id in email_ids_to_fetch:
+        # Use the actual email_id as the sequence number
         status, msg_data = mail.fetch(email_id, '(RFC822)')
         for response_part in msg_data:
             if isinstance(response_part, tuple):
@@ -56,6 +66,7 @@ def read_email():
                         from_decoded += part
 
                 email_dict = {
+                    # Use the actual email_id as the sequence number
                     "seqno": int(email_id.decode()),
                     "from": from_decoded,
                     "to": msg["to"],
