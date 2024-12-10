@@ -66,7 +66,6 @@ def read_email():
                         from_decoded += part
 
                 email_dict = {
-                    # Use the actual email_id as the sequence number
                     "seqno": int(email_id.decode()),
                     "from": from_decoded,
                     "to": msg["to"],
@@ -111,8 +110,8 @@ def send_email():
     password = data.get('password')
     smtp_server = data.get('outgoingMailServer')
 
-    # Default to 587 if not provided
-    smtp_port = data.get('outgoingMailServerPort', 587)
+    # Default to 25 if no port is provided
+    smtp_port = data.get('outgoingMailServerPort', 25)
 
     # Create the email
     msg = MIMEMultipart()
@@ -126,7 +125,6 @@ def send_email():
     # Send the email
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
         server.login(username, password)
         server.sendmail(username, to_email, msg.as_string())
         server.quit()
