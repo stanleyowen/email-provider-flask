@@ -60,3 +60,40 @@ def read_email():
                 email_data.append(email_dict)
 
     return jsonify(email_data)
+
+
+# Route to send an email
+@email_route.route('/send', methods=['POST'])
+def send_email():
+    data = request.json
+    to_email = data.get('to')
+    subject = data.get('subject')
+    body = data.get('text')
+
+    # Get the email credentials from the request body
+    username = data.get('email')
+    password = data.get('password')
+    smtp_server = data.get('outgoingMailServer')
+
+    # Default to 587 if not provided
+    smtp_port = data.get('outgoingMailServerPort', 587)
+
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = username
+    msg['To'] = to_email
+    msg['Subject'] = subject
+
+    # Attach the plain text body
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Send the email
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(username, password)
+        server.sendmail(username, to_email, msg.as_string())
+        server.quit()
+        return jsonify({"status": "success", "message": "Email sent successfully"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
