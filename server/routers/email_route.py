@@ -19,14 +19,9 @@ def read_email():
 
     print(username, password, imap_server)
 
-    # Connect to the server
-    mail = imaplib.IMAP4_SSL(imap_server)
-
-    # Login to your account
-    mail.login(username, password)
-
-    # Select the mailbox you want to read (in this case, the inbox)
-    mail.select("inbox")
+    mail = imaplib.IMAP4_SSL(imap_server)  # Connect to the server
+    mail.login(username, password)  # Login to your account
+    mail.select("inbox")  # Select the inbox folder
 
     # Search for all emails in the inbox
     status, messages = mail.search(None, 'ALL')
