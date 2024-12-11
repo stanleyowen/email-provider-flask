@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Alert,
-  Slide,
-  Snackbar,
-  LinearProgress,
-  SlideProps,
-} from "@mui/material";
+import { LinearProgress, SlideProps } from "@mui/material";
 
 import Navbar from "./navbar.component";
 import BaseLayout from "./base.component";
@@ -20,12 +14,6 @@ const App = ({
   handleCredential,
   refreshInbox,
 }: any) => {
-  const HOST_DOMAIN: string =
-    process.env.REACT_APP_HOST_DOMAIN ?? window.location.origin;
-  const [transition, setTransition] = useState<
-    React.ComponentType<TransitionProps> | undefined
-  >(undefined);
-
   useEffect(() => {
     const themeURL = JSON.parse(
       localStorage.getItem("theme-session") || `{}`

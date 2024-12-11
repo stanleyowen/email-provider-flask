@@ -111,6 +111,16 @@ const ComposeEmail = ({ auth, handleCredential }: AuthInterface) => {
         .then((res) => {
           console.log(res.data);
           parseError(res.data.message, true); // Display the success message
+
+          // Reset the input fields
+          setData({
+            ...data,
+            to: "",
+            cc: "",
+            bcc: "",
+            subject: "",
+            text: "",
+          });
         })
         .catch((err) => {
           parseError(err.response.data.error); // Display the error message
@@ -143,7 +153,18 @@ const ComposeEmail = ({ auth, handleCredential }: AuthInterface) => {
   return (
     <div>
       <div style={{ padding: "20px" }}>
-        <h1 style={{ marginBottom: "40px" }}>Compose Email</h1>
+        <h1 style={{ marginBottom: "10px" }}>Compose Email</h1>
+
+        <Alert
+          severity="info"
+          style={{ marginBottom: "40px" }}
+          className="w-auto"
+        >
+          To send an email to multiple recipients, separate the email addresses
+          with a comma.
+          <br />
+          <strong>Example:</strong> hello@world.com,hi@world.com
+        </Alert>
 
         <Grid2 container spacing={3}>
           <Grid2 size={{ xs: 12, md: 6 }}>
