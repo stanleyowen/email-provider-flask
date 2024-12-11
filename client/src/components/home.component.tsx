@@ -13,12 +13,10 @@ const Home = ({ auth, refreshInbox, parseError }: any) => {
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [replyMode, setReplyMode] = useState<boolean>(false);
+  const [forwardMode, setForwardMode] = useState<boolean>(false);
   const [isLoading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<{ text: string }>({
-    text: "",
-  });
+  const [data, setData] = useState<string>("");
 
-  console.log(auth.emails);
   const emailsPerPage = 50;
 
   useEffect(() => {
@@ -37,8 +35,8 @@ const Home = ({ auth, refreshInbox, parseError }: any) => {
       );
   };
 
-  const handleData = (key: string, value: string | number) => {
-    setData({ ...data, [key]: value });
+  const handleData = (value: string) => {
+    setData(value);
   };
 
   const handleNextPage = () => {
@@ -83,12 +81,14 @@ const Home = ({ auth, refreshInbox, parseError }: any) => {
         ...credentials,
         to: selectedEmail.from.split(","),
         subject: `Re: ${selectedEmail.subject}`,
-        text: data.text,
+        text: data,
         inReplyTo: selectedEmail.message_id || "",
         references: selectedEmail.references || "",
       })
       .then((response) => {
         parseError(response.data.message, true);
+
+        setData("");
       })
       .catch((err) => {
         parseError(err.response.data.message);
@@ -96,6 +96,40 @@ const Home = ({ auth, refreshInbox, parseError }: any) => {
 
     setLoading(false);
     setReplyMode(false);
+  };
+
+  const forwardEmail = async () => {
+    setLoading(true);
+
+    const credentials = JSON.parse(localStorage.getItem("credentials") || "{}");
+
+    // Combine the the details of the forwarded email with the original email
+    const htmlText = `${
+      selectedEmail.body
+    }<br><br>---------- Forwarded message ----------<br>From: ${
+      selectedEmail.from
+    }<br>Date: ${new Date(selectedEmail.date).toDateString()}<br>Subject: ${
+      selectedEmail.subject
+    }<br><br>${selectedEmail.body}`;
+
+    await axios
+      .post(`${process.env.REACT_APP_API_URL}/mail/forward`, {
+        ...credentials,
+        to: data.split(","),
+        subject: `Fwd: ${selectedEmail.subject}`,
+        html: htmlText,
+      })
+      .then((response) => {
+        parseError(response.data.message, true);
+
+        setData("");
+      })
+      .catch((err) => {
+        parseError(err.response.data.message);
+      });
+
+    setLoading(false);
+    setForwardMode(false);
   };
 
   return (
@@ -227,7 +261,7 @@ const Home = ({ auth, refreshInbox, parseError }: any) => {
                   }}
                 ></div>
 
-                {!replyMode ? (
+                {!replyMode && !forwardMode ? (
                   <>
                     <button
                       className="card p-10 mt-10"
@@ -249,6 +283,7 @@ const Home = ({ auth, refreshInbox, parseError }: any) => {
                         marginRight: "10px",
                       }}
                       disabled={auth.isLoading}
+                      onClick={() => setForwardMode(!forwardMode)}
                     >
                       Forward
                     </button>
@@ -268,12 +303,12 @@ const Home = ({ auth, refreshInbox, parseError }: any) => {
                             label="Message"
                             variant="outlined"
                             className="w-100"
-                            value={data.text}
+                            value={data}
                             required
                             multiline
                             rows={4}
                             disabled={isLoading || auth.isLoading}
-                            onChange={(e) => handleData("text", e.target.value)}
+                            onChange={(e) => handleData(e.target.value)}
                           />
                         </Grid2>
 
@@ -295,6 +330,40 @@ const Home = ({ auth, refreshInbox, parseError }: any) => {
               </>
             ) : (
               <p>Email not found</p>
+            )}
+
+            {forwardMode ? (
+              <div>
+                <div style={{ padding: "20px" }}>
+                  <h3 style={{ marginBottom: "10px" }}>Forward Email</h3>
+
+                  <Grid2 container spacing={3}>
+                    <Grid2 size={12}>
+                      <TextField
+                        label="To"
+                        variant="outlined"
+                        className="w-100"
+                        value={data}
+                        required
+                        disabled={isLoading || auth.isLoading}
+                        onChange={(e) => handleData(e.target.value)}
+                      />
+                    </Grid2>
+
+                    <Grid2 size={12}>
+                      <LoadingButton
+                        variant="outlined"
+                        loading={isLoading || auth.isLoading}
+                        onClick={() => forwardEmail()}
+                      >
+                        Forward
+                      </LoadingButton>
+                    </Grid2>
+                  </Grid2>
+                </div>
+              </div>
+            ) : (
+              <></>
             )}
           </div>
         </div>
