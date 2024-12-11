@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+
 import { Refresh } from "../lib/icons.component";
 import axios from "axios";
 import { Tooltip, IconButton } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "../lib/icons.component";
 
-const Home = ({ auth, refreshInbox }: any) => {
+const Home = ({ auth, refreshInbox, parseError }: any) => {
   const [greeting, setGreeting] = useState<string>();
   const [viewMode, setViewMode] = useState<string | number>("list");
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
@@ -50,6 +51,8 @@ const Home = ({ auth, refreshInbox }: any) => {
         const newEmails = auth.emails.filter(
           (email: any) => email.seqno !== seqno
         );
+
+        parseError(response.data.message, true);
 
         auth.emails = newEmails;
         setSelectedEmail(null);

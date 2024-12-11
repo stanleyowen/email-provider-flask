@@ -1,24 +1,10 @@
 import React, { useState } from "react";
-import { Alert, Snackbar, SlideProps, TextField, Grid2 } from "@mui/material";
+import { Alert, TextField, Grid2 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 import axios from "axios";
 
-import { AuthInterface } from "../lib/interfaces.lib";
-
-type TransitionProps = Omit<SlideProps, "direction">;
-
-const ComposeEmail = ({ auth, handleCredential }: AuthInterface) => {
+const ComposeEmail = ({ auth, parseError }: any) => {
   const credentials = JSON.parse(localStorage.getItem("credentials") || "{}");
-
-  const [status, setStatus] = useState<{
-    isError: boolean;
-    isSuccess: boolean;
-    message: string | null;
-  }>({
-    isError: false,
-    isSuccess: false,
-    message: "",
-  });
 
   const [data, setData] = useState<{
     email: string;
@@ -41,10 +27,6 @@ const ComposeEmail = ({ auth, handleCredential }: AuthInterface) => {
   });
 
   const [isLoading, setLoading] = useState<boolean>(false);
-
-  const [transition, setTransition] = useState<
-    React.ComponentType<TransitionProps> | undefined
-  >(undefined);
 
   // Handle the login data changes from the input fields
   const handleData = (key: string, value: string | number) => {
@@ -121,26 +103,6 @@ const ComposeEmail = ({ auth, handleCredential }: AuthInterface) => {
 
     setLoading(false); // Set the loading state to false
   };
-
-  // Parse the error message and display it in the snackbar
-  function parseError(errorMessage: string, success?: boolean) {
-    setStatus({
-      isSuccess: success || false,
-      isError: !success || false,
-      message: errorMessage,
-    });
-
-    // Hide the snackbar after 5 seconds
-    setTimeout(
-      () =>
-        setStatus({
-          isError: false,
-          isSuccess: false,
-          message: errorMessage,
-        }),
-      5000
-    );
-  }
 
   return (
     <div>
@@ -241,18 +203,6 @@ const ComposeEmail = ({ auth, handleCredential }: AuthInterface) => {
           </Grid2>
         </Grid2>
       </div>
-
-      <Snackbar
-        open={status.isError || status.isSuccess}
-        TransitionComponent={transition}
-        style={{
-          right: "24px",
-        }}
-      >
-        <Alert severity={status.isSuccess ? "success" : "error"}>
-          {status.message}
-        </Alert>
-      </Snackbar>
     </div>
   );
 };

@@ -12,13 +12,14 @@ const BaseLayout = ({
   handleChange,
   handleCredential,
   refreshInbox,
+  parseError,
 }: any) => {
   return (
     <div className="base">
       {properties.activeTab === "home" ? (
-        <Home auth={auth} refreshInbox={refreshInbox} />
+        <Home auth={auth} refreshInbox={refreshInbox} parseError={parseError} />
       ) : properties.activeTab === "compose" ? (
-        <ComposeEmail auth={auth} handleCredential={handleCredential} />
+        <ComposeEmail auth={auth} parseError={parseError} />
       ) : properties.activeTab === "search" ? (
         <Search auth={auth} />
       ) : (
