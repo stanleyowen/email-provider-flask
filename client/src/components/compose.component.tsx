@@ -89,14 +89,6 @@ const ComposeEmail = ({ auth, handleCredential }: AuthInterface) => {
       parseError("Message is too large");
     }
 
-    // Check if the to, cc, and bcc fields are valid emails if they are not empty
-    // else if (
-    //   (data.cc !== "" && (!data.cc.includes("@") || !data.cc.includes("."))) ||
-    //   (data.bcc !== "" && (!data.bcc.includes("@") || !data.bcc.includes(".")))
-    // ) {
-    //   parseError("Invalid email address");
-    // }
-
     // Make the POST request to the server
     else {
       const sendData = {

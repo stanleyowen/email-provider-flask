@@ -43,7 +43,7 @@ const Home = ({ auth, refreshInbox }: any) => {
     const credentials = JSON.parse(localStorage.getItem("credentials") || "{}");
 
     await axios
-      .delete(`${process.env.REACT_APP_API_URL}/mail`, {
+      .delete(`${process.env.REACT_APP_API_URL}/mail/`, {
         data: { ...credentials, seqno: seqno.toString() },
       })
       .then((response) => {

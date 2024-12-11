@@ -127,8 +127,8 @@ def send_email():
     body = data.get('text')
 
     # Get the email credentials from the request body
-    email = data.get('email')
-    password = data.get('password')
+    userEmail = data.get('email')
+    userPassword = data.get('password')
     smtp_server = data.get('outgoingMailServer')
     # Default to 25 if no port is provided
     smtp_port = data.get('outgoingMailServerPort', 25)
@@ -175,3 +175,37 @@ def send_email():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# Route to delete emails
+@email_route.route('/', methods=['DELETE'])
+def delete_email():
+    # Get the email credentials and email ID to delete from the request body
+    data = request.json
+    username = data.get('email')
+    password = data.get('password')
+    imap_server = data.get('incomingMailServer')
+    email_id = data.get('seqno')  # Expecting a single email ID to delete
+
+    # Check if all the required fields are present in the request
+    if not username or not password or not imap_server or not email_id:
+        return jsonify({"status": "error", "message": "Missing required fields"}), 400
+
+    # Connect to the server
+    mail = imaplib.IMAP4_SSL(imap_server)
+
+    # Login to the account
+    mail.login(username, password)
+
+    # Select the mailbox you want to delete the email from (in this case, the inbox)
+    status, response = mail.select("inbox")
+    if status != 'OK':
+        return jsonify({"status": "error", "message": "Failed to select mailbox: INBOX"}), 500
+
+    # Mark the email for deletion
+    mail.store(str(email_id), '+FLAGS', '\\Deleted')
+
+    # Permanently remove the email marked for deletion
+    mail.expunge()
+
+    return jsonify({"status": "success", "message": "Email deleted successfully"}), 200
