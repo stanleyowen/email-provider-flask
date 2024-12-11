@@ -16,15 +16,15 @@ email_route = Blueprint('email_route', __name__)
 def read_email():
     # Get the email credentials from the request body
     data = request.json
-    email = data.get('email')
-    password = data.get('password')
+    userEmail = data.get('email')
+    userPassword = data.get('password')
     imap_server = data.get('incomingMailServer')
 
     # Check if the all the required fields are present in the request
-    if not email or not password or not imap_server:
+    if not userEmail or not userPassword or not imap_server:
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
     # Check if the email format is valid
-    elif not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+    elif not re.match(r"[^@]+@[^@]+\.[^@]+", userEmail):
         return jsonify({"status": "error", "message": "Invalid email format"}), 400
     # Check if the incoming mail server is valid
     elif not re.match(r"[a-zA-Z0-9.-]+", imap_server):
@@ -38,7 +38,7 @@ def read_email():
     mail = imaplib.IMAP4_SSL(imap_server)
 
     # Login to the account
-    mail.login(email, password)
+    mail.login(userEmail, userPassword)
 
     # Select the mailbox you want to read (in this case, the inbox)
     status, inbox = mail.select("inbox")
@@ -134,10 +134,10 @@ def send_email():
     smtp_port = data.get('outgoingMailServerPort', 25)
 
     # Check if the all the required fields are present in the request
-    if not email or not password or not smtp_server or not to_emails or not subject or not body:
+    if not userEmail or not userPassword or not smtp_server or not to_emails or not subject or not body:
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
     # Check if the email format is valid
-    elif not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+    elif not re.match(r"[^@]+@[^@]+\.[^@]+", userEmail):
         return jsonify({"status": "error", "message": "Invalid email format"}), 400
     # Check if the outgoing mail server is valid
     elif not re.match(r"[a-zA-Z0-9.-]+", smtp_server):
@@ -145,12 +145,12 @@ def send_email():
     # Check if the email addresses in the to, cc, and bcc fields are valid
     for email_list in [to_emails, cc_emails, bcc_emails]:
         for email_address in email_list:
-            if not re.match(r"[^@]+@[^@]+\.[^@]+", email_address):
+            if email_address and not re.match(r"[^@]+@[^@]+\.[^@]+", email_address):
                 return jsonify({"status": "error", "message": "Invalid recipient email format"}), 400
 
     # Create the email
     msg = MIMEMultipart()
-    msg['From'] = email
+    msg['From'] = userEmail
     msg['To'] = ", ".join(to_emails)
     msg['Cc'] = ", ".join(cc_emails)
     msg['Bcc'] = ", ".join(bcc_emails)
@@ -167,9 +167,9 @@ def send_email():
 
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
-        server.login(username, password)
+        server.login(userEmail, userPassword)
         # Send to the list of emails
-        server.sendmail(username, all_recipients, msg.as_string())
+        server.sendmail(userEmail, all_recipients, msg.as_string())
         server.quit()
         return jsonify({"status": "success", "message": "Email sent successfully"}), 200
 

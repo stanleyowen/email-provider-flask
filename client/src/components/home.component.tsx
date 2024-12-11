@@ -44,7 +44,7 @@ const Home = ({ auth, refreshInbox }: any) => {
 
     await axios
       .delete(`${process.env.REACT_APP_API_URL}/mail`, {
-        data: { ...credentials, seqno },
+        data: { ...credentials, seqno: seqno.toString() },
       })
       .then((response) => {
         const newEmails = auth.emails.filter(
