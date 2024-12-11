@@ -12,23 +12,21 @@ from flask import Blueprint, request, jsonify
 email_route = Blueprint('email_route', __name__)
 
 
+# Route to read emails
 @email_route.route('/', methods=['POST'])
 def read_email():
     # Get the email credentials from the request body
     data = request.json
-    userEmail = data.get('email')
-    userPassword = data.get('password')
+    username = data.get('email')
+    password = data.get('password')
     imap_server = data.get('incomingMailServer')
 
-    # Check if the all the required fields are present in the request
-    if not userEmail or not userPassword or not imap_server:
+    # Check if all the required fields are present in the request
+    if not username or not password or not imap_server:
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
     # Check if the email format is valid
-    elif not re.match(r"[^@]+@[^@]+\.[^@]+", userEmail):
+    elif not re.match(r"[^@]+@[^@]+\.[^@]+", username):
         return jsonify({"status": "error", "message": "Invalid email format"}), 400
-    # Check if the incoming mail server is valid
-    elif not re.match(r"[a-zA-Z0-9.-]+", imap_server):
-        return jsonify({"status": "error", "message": "Invalid incoming mail server"}), 400
 
     # Get query parameters for starting ID and number of messages
     start_id = int(data.get('startId', 1))
@@ -38,7 +36,7 @@ def read_email():
     mail = imaplib.IMAP4_SSL(imap_server)
 
     # Login to the account
-    mail.login(userEmail, userPassword)
+    mail.login(username, password)
 
     # Select the mailbox you want to read (in this case, the inbox)
     status, inbox = mail.select("inbox")
@@ -65,30 +63,54 @@ def read_email():
 
     for email_id in email_ids_to_fetch:
         # Use the actual email_id as the sequence number
+        seqno = int(email_id.decode())
         status, msg_data = mail.fetch(email_id, '(RFC822)')
         for response_part in msg_data:
             if isinstance(response_part, tuple):
                 msg = email.message_from_bytes(response_part[1])
 
                 # Decode the subject
-                subject, encoding = decode_header(msg["subject"])[0]
-                if isinstance(subject, bytes):
-                    subject = subject.decode(encoding or 'utf-8')
+                subject_parts = decode_header(msg["subject"])
+                subject = ''.join(
+                    part.decode(enc or 'utf-8') if isinstance(part,
+                                                              bytes) else part
+                    for part, enc in subject_parts
+                )
 
                 # Decode the from field
                 from_ = msg["from"]
-                from_parts = decode_header(from_)
                 from_decoded = ""
-                for part, enc in from_parts:
-                    if isinstance(part, bytes):
-                        from_decoded += part.decode(enc or 'utf-8')
-                    else:
-                        from_decoded += part
+                if from_:
+                    from_parts = decode_header(from_)
+                    for part, enc in from_parts:
+                        if isinstance(part, bytes):
+                            try:
+                                from_decoded += part.decode(enc or 'utf-8')
+                            except UnicodeDecodeError:
+                                from_decoded += part.decode('utf-8',
+                                                            errors='replace')
+                        else:
+                            from_decoded += part
+
+                # Decode the to field
+                to_ = msg["to"]
+                to_decoded = ""
+                if to_:
+                    to_parts = decode_header(to_)
+                    for part, enc in to_parts:
+                        if isinstance(part, bytes):
+                            try:
+                                to_decoded += part.decode(enc or 'utf-8')
+                            except UnicodeDecodeError:
+                                to_decoded += part.decode('utf-8',
+                                                          errors='replace')
+                        else:
+                            to_decoded += part
 
                 email_dict = {
-                    "seqno": int(email_id.decode()),
+                    "seqno": seqno,  # Use the actual email_id as the sequence number
                     "from": from_decoded,
-                    "to": msg["to"],
+                    "to": to_decoded,
                     "subject": subject,
                     "date": msg["date"],
                     "body": ""
@@ -100,18 +122,32 @@ def read_email():
                         if payload:
                             encoding = chardet.detect(
                                 payload)['encoding'] or 'utf-8'
-                            email_dict["body"] = payload.decode(
-                                encoding, errors='replace')
+                            try:
+                                email_dict["body"] = payload.decode(
+                                    encoding, errors='replace')
+                            except UnicodeDecodeError:
+                                try:
+                                    email_dict["body"] = payload.decode(
+                                        'utf-8', errors='replace')
+                                except UnicodeDecodeError:
+                                    email_dict["body"] = payload.decode(
+                                        'latin1', errors='replace')
                             break  # Prioritize HTML content
-
                     elif part.get_content_type() == "text/plain" and not email_dict["body"]:
                         payload = part.get_payload(decode=True)
                         if payload:
                             encoding = chardet.detect(
                                 payload)['encoding'] or 'utf-8'
-                            email_dict["body"] = payload.decode(
-                                encoding, errors='replace')
-
+                            try:
+                                email_dict["body"] = payload.decode(
+                                    encoding, errors='replace')
+                            except UnicodeDecodeError:
+                                try:
+                                    email_dict["body"] = payload.decode(
+                                        'utf-8', errors='replace')
+                                except UnicodeDecodeError:
+                                    email_dict["body"] = payload.decode(
+                                        'latin1', errors='replace')
                 email_data.append(email_dict)
 
     return jsonify(email_data)
