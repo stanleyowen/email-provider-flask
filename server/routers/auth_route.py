@@ -1,4 +1,6 @@
+import re
 import imaplib
+
 from flask import Blueprint, request, jsonify
 
 auth_route = Blueprint('auth_route', __name__)
@@ -16,8 +18,14 @@ def login():
     # Check if the all the required fields are present in the request
     if not email or not password or not imap_server:
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
-    # Check if the email
+    # Check if the email format is valid
+    elif not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return jsonify({"status": "error", "message": "Invalid email format"}), 400
+    # Check if the incoming mail server is valid
+    elif not re.match(r"[a-zA-Z0-9.-]+", imap_server):
+        return jsonify({"status": "error", "message": "Invalid incoming mail server"}), 400
 
+    # Check if the email credentials are valid by attempting to login
     try:
         # Connect to the server
         mail = imaplib.IMAP4_SSL(imap_server)
