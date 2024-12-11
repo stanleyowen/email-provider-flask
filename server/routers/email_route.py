@@ -26,14 +26,19 @@ def read_email():
     # Connect to the server
     mail = imaplib.IMAP4_SSL(imap_server)
 
-    # Login to your account
+    # Login to the account
     mail.login(username, password)
 
     # Select the mailbox you want to read (in this case, the inbox)
-    mail.select("inbox")
+    status, inbox = mail.select("inbox")
+    if status != 'OK':
+        return jsonify({"status": "error", "message": f"Failed to select mailbox: INBOX"}), 500
 
     # Search for all emails in the inbox
     status, messages = mail.search(None, 'ALL')
+    if status != 'OK':
+        return jsonify({"status": "error", "message": "Failed to search emails"}), 500
+
     email_ids = messages[0].split()
 
     # Check if the starting ID is within the range of available email IDs
@@ -101,11 +106,12 @@ def read_email():
     return jsonify(email_data)
 
 
-# Route to send an email
 @email_route.route('/send', methods=['POST'])
 def send_email():
     data = request.json
-    to_email = data.get('to')
+    to_emails = data.get('to', [])  # Expecting a list of email addresses
+    cc_emails = data.get('cc', [])  # Expecting a list of CC email addresses
+    bcc_emails = data.get('bcc', [])  # Expecting a list of BCC email addresses
     subject = data.get('subject')
     body = data.get('text')
 
@@ -113,24 +119,32 @@ def send_email():
     username = data.get('email')
     password = data.get('password')
     smtp_server = data.get('outgoingMailServer')
-
     # Default to 25 if no port is provided
     smtp_port = data.get('outgoingMailServerPort', 25)
 
     # Create the email
     msg = MIMEMultipart()
     msg['From'] = username
-    msg['To'] = to_email
+    msg['To'] = ", ".join(to_emails)
+    msg['Cc'] = ", ".join(cc_emails)
+    # Add BCC to the email headers for logging
+    msg['Bcc'] = ", ".join(bcc_emails)
     msg['Subject'] = subject
+
+    print(
+        f"Sending email to {to_emails} with CC to {cc_emails} and BCC to {bcc_emails}")
 
     # Attach the plain text body
     msg.attach(MIMEText(body, 'plain'))
 
-    # Send the email
+    # Combine all recipients for the sendmail function
+    all_recipients = to_emails + cc_emails + bcc_emails
+
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.login(username, password)
-        server.sendmail(username, to_email, msg.as_string())
+        # Send to the list of emails
+        server.sendmail(username, all_recipients, msg.as_string())
         server.quit()
         return jsonify({"status": "success", "message": "Email sent successfully"}), 200
     except Exception as e:

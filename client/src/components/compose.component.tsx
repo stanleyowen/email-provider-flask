@@ -90,17 +90,24 @@ const ComposeEmail = ({ auth, handleCredential }: AuthInterface) => {
     }
 
     // Check if the to, cc, and bcc fields are valid emails if they are not empty
-    else if (
-      (data.cc !== "" && (!data.cc.includes("@") || !data.cc.includes("."))) ||
-      (data.bcc !== "" && (!data.bcc.includes("@") || !data.bcc.includes(".")))
-    ) {
-      parseError("Invalid email address");
-    }
+    // else if (
+    //   (data.cc !== "" && (!data.cc.includes("@") || !data.cc.includes("."))) ||
+    //   (data.bcc !== "" && (!data.bcc.includes("@") || !data.bcc.includes(".")))
+    // ) {
+    //   parseError("Invalid email address");
+    // }
 
     // Make the POST request to the server
     else {
+      const sendData = {
+        ...data,
+        to: data.to.split(",") || [],
+        cc: data.cc.split(",") || [],
+        bcc: data.bcc.split(",") || [],
+      };
+
       await axios
-        .post(`${process.env.REACT_APP_API_URL}/mail/send`, data)
+        .post(`${process.env.REACT_APP_API_URL}/mail/send`, sendData)
         .then((res) => {
           console.log(res.data);
           parseError(res.data.message, true); // Display the success message
