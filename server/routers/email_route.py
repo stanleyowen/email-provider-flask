@@ -299,6 +299,10 @@ def reply_email():
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email_address):
             return jsonify({"status": "error", "message": "Invalid recipient email format"}), 400
 
+    # Add "Re:" to the subject if it's not already present
+    if not subject.startswith("Re: "):
+        subject = "Re: " + subject
+
     # Create the email
     msg = MIMEMultipart()
     msg['From'] = userEmail
@@ -306,8 +310,6 @@ def reply_email():
     msg['Subject'] = subject
     msg['In-Reply-To'] = in_reply_to
     msg['References'] = references
-
-    print(f"Replying to email {in_reply_to} with subject {subject}")
 
     # Attach the plain text body
     msg.attach(MIMEText(body, 'plain'))
@@ -329,5 +331,71 @@ def reply_email():
             server.sendmail(userEmail, to_emails, msg.as_string())
             server.quit()
             return jsonify({"status": "success", "message": "Reply sent successfully"}), 200
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# Route to forward emails
+@email_route.route('/forward', methods=['POST'])
+def forward_email():
+    data = request.json
+    to_emails = data.get('to', [])  # Expecting a list of email addresses
+    subject = data.get('subject')
+    body = data.get('html')
+
+    # Get the email credentials from the request body
+    userEmail = data.get('email')
+    userPassword = data.get('password')
+    smtp_server = data.get('outgoingMailServer')
+
+    # Default to 25 if no port is provided
+    smtp_port = data.get('outgoingMailServerPort', 25)
+
+    # Check if all the required fields are present in the request
+    if not userEmail or not userPassword or not smtp_server or not to_emails or not subject or not body:
+        return jsonify({"status": "error", "message": "Missing required fields"}), 400
+    # Check if the email format is valid
+    elif not re.match(r"[^@]+@[^@]+\.[^@]+", userEmail):
+        return jsonify({"status": "error", "message": "Invalid email format"}), 400
+    # Check if the outgoing mail server is valid
+    elif not re.match(r"[a-zA-Z0-9.-]+", smtp_server):
+        return jsonify({"status": "error", "message": "Invalid outgoing mail server"}), 400
+    # Check if the recipient email addresses are valid
+    for email_address in to_emails:
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email_address):
+            return jsonify({"status": "error", "message": "Invalid recipient email format"}), 400
+
+    # Add "Fwd:" to the subject if it's not already present
+    if not subject.startswith("Fwd: "):
+        subject = "Fwd: " + subject
+
+    # Add the original message as a quote in the body
+    body = f"---------- Forwarded message ----------\n{body}"
+
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = userEmail
+    msg['To'] = ", ".join(to_emails)
+    msg['Subject'] = subject
+
+    # Attach the HTML body
+    msg.attach(MIMEText(body, 'html'))
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.login(userEmail, userPassword)
+        # Send the email
+        server.sendmail(userEmail, to_emails, msg.as_string())
+        server.quit()
+        return jsonify({"status": "success", "message": "Email forwarded successfully"}), 200
+    except Exception as e:
+        # Retry with TLS if the connection fails
+        try:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(userEmail, userPassword)
+            # Send the email
+            server.sendmail(userEmail, to_emails, msg.as_string())
+            server.quit()
+            return jsonify({"status": "success", "message": "Email forwarded successfully"}), 200
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
