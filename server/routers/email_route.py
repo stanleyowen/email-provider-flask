@@ -210,7 +210,17 @@ def send_email():
         return jsonify({"status": "success", "message": "Email sent successfully"}), 200
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        # Retry with TLS if the connection fails
+        try:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(userEmail, userPassword)
+            # Send to the list of emails
+            server.sendmail(userEmail, all_recipients, msg.as_string())
+            server.quit()
+            return jsonify({"status": "success", "message": "Email sent successfully"}), 200
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # Route to delete emails
