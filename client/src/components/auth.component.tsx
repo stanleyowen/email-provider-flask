@@ -32,7 +32,7 @@ const Auth = ({ auth, handleCredential }: AuthInterface) => {
 
   const [isLoading, setLoading] = useState<boolean>(false);
 
-  const [transition, setTransition] = useState<
+  const [transition, _] = useState<
     React.ComponentType<TransitionProps> | undefined
   >(undefined);
 

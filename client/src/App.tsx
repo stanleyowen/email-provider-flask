@@ -7,9 +7,7 @@ import SideBar from "./components/sidebar.component";
 import Auth from "./components/auth.component";
 import AppLayout from "./components/app.component";
 
-process.env.NODE_ENV === "production"
-  ? require("./App.min.css")
-  : require("./App.css");
+require("./App.css");
 
 // eslint-disable-next-line
 export default function App() {

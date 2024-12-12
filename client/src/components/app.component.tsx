@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Alert, Snackbar, LinearProgress, SlideProps } from "@mui/material";
 
 import Navbar from "./navbar.component";
@@ -24,7 +24,7 @@ const App = ({
     message: "",
   });
 
-  const [transition, setTransition] = useState<
+  const [transition, _] = useState<
     React.ComponentType<TransitionProps> | undefined
   >(undefined);
 

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Tooltip, IconButton } from "@mui/material";
-import { ChevronLeft, ChevronRight, Logout } from "../lib/icons.component";
+import { Logout } from "../lib/icons.component";
 
 // eslint-disable-next-line
 const Navbar = ({ handleCredential }: any) => {
